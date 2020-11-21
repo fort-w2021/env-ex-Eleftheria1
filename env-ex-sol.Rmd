@@ -1,0 +1,52 @@
+# Umgebungen umgibt unglaubliches
+
+Lesen Sie das ["Environments"](https://adv-r.hadley.nz/environments.html)-Kapitel aus *Advanced R Programming* aufmerksam durch. 
+
+Bearbeiten Sie die folgenden, teilweise von dort übernommenen Aufgaben:
+
+a) Inwiefern unterscheiden sich in R Listen (`list`) von `environment`s?
+
+environments haben parent environments (außer das empty environment, dies ist das oberste environment), listen nicht.
+in listen müsssen einzelne objekte nicht notwendigerweise benamt sein, in environments schon.
+In environments gibt es keine Ordnung bei einer liste schon (d.h. man kann bei einer liste beispielsweise auf das dritte element zugreifen).
+Environments beinhalten selbst keine Werte sondern referenzieren nur darauf.
+
+b) Wo suchen `ls()` und `rm()` wenn nicht explizit ein `environment` angegeben wird?
+
+ls und remove suchen immer im aktuellen environment. Also wenn zb ls(im Rumpf einer Funktion aufgerufen wird, wird das 'Funktionsenvirment' und nicht das global environment benutzt)
+
+c) Wo legt `<-` eine (neue) `binding` an? Wo `<<-`?
+
+<- im aktuellen environment
+<<- im nächst höheren environment, welches die benutzte variable enthält. wenn kein environment die variable enthält wird eine neue variable im globalenvironment erzeugt.
+
+d) Schreiben sie eine modifizierte Version `anywhere()` der Funktion `where()` aus dem `pryr`-Paket (**nicht** der im Buch definierten Funktion `where`), die *alle* Umgebungen im Suchpfad die eine Variable des gegebenen Namens enthalten in Form einer Liste zurückgibt. Überprüfen Sie ihre Implementation mit `test-env-anywhere.R`.
+
+```{r, where}
+pryr::where
+```
+
+
+```{r}
+# function lists all environments in which a can be found
+anywhere <- function(name, env = parent.frame()) {
+  # input check
+  stopifnot(is.character(name), length(name) == 1)
+  env <- pryr:::to_env(env)
+  env_list <- list()
+  # loop over parents and append the environments in which name can be found
+  while (!identical(env, emptyenv())) {
+    if (exists(name, env, inherits = FALSE)) {
+      env_list <- append(env_list, env)
+    }
+    env <- parent.env(env)
+  }
+  if (length(env_list) == 0) {
+    list()
+  } else {
+    env_list
+  }
+}
+```
+
+*Hinweis:* Die Funktion `to_env()`, die in `pryr::where()` benutzt wird wird nicht von `pryr` exportiert. Sie können die Funktion trotzdem mittels `pryr:::to_env()` aufrufen.
